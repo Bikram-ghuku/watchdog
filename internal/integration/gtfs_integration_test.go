@@ -32,17 +32,17 @@ func TestDownloadGTFSBundles(t *testing.T) {
 		srv := server
 		t.Run(fmt.Sprintf("ServerID_%d", srv.ID), func(t *testing.T) {
 			t.Parallel()
-
 			staticBundle,err := gtfsService.DownloadGTFSBundle(ctx,srv.GtfsUrl, srv.ID,20)
 			if err != nil {
 				t.Errorf("failed to download GTFS bundle for server %d : %v", srv.ID, err)
-				err = gtfsService.StoreGTFSBundle(staticBundle,server.ID)
-				if err != nil {
-					t.Errorf("failed to store GTFS bundle for server %d : %v", srv.ID, err)
-				}
-			}else{
-				t.Logf("GTFS bundle downloaded successfully for server %d", srv.ID)
+				return
 			}
+			err = gtfsService.StoreGTFSBundle(staticBundle,server.ID)
+			if err != nil {
+				t.Errorf("failed to store GTFS bundle for server %d : %v", srv.ID, err)
+				return
+			}
+			t.Logf("GTFS bundle downloaded successfully for server %d", srv.ID)
 		})
 	}
 }
