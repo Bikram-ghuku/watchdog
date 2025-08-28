@@ -1,26 +1,51 @@
-# watchdog
+# Watchdog
 
 [![Coverage Status](https://coveralls.io/repos/github/OneBusAway/watchdog/badge.svg?branch=main)](https://coveralls.io/github/OneBusAway/watchdog?branch=main)
 
-Golang-based Watchdog service for OBA REST API servers, providing deep observability by exposing a rich suite of Prometheus metrics. These metrics enable comprehensive monitoring of API uptime, GTFS Static and GTFS-RT data integrity, vehicle telemetry, agency and stop coverage, and overall operational health.
+**Watchdog** is a Go-based service that monitors [OneBusAway (OBA)](https://onebusaway.org/) REST API servers.  
+It exposes a comprehensive set of **Prometheus metrics** for monitoring:
 
-You can find documentation for the currently exposed metrics along with an interpretation guide [here](./docs/METRICS.md).
+- GTFS Static and GTFS-RT data integrity
+- Vehicle telemetry
+- Agency and stop coverage
+- Overall operational health
+  See the full list of metrics and interpretation guide [here](./docs/METRICS.md)
 
-# Requirements
+## Table of Contents
 
-Go 1.23 or higher
+- [Requirements](#requirements)
+- [Setup](#setup)
+  - [Configuration](#configuration)
+    - [Example config.json](#example-configjson)
+    - [Ways to Provide the Config File](#ways-to-provide-the-config-file)
+      - [Local Configuration (recommended for development)](#1-local-configuration-recommended-for-development)
+      - [Remote Configuration (recommended for production)](#2-remote-configuration-recommended-for-production)
+  - [Application Options](#application-options)
+  - [Environment Variables](#environment-variables)
+- [Running](#running)
+  - [Docker Compose (recommended)](#1-docker-compose-recommended)
+  - [Watchdog Only](#2-watchdog-only)
+    - [Local Config](#local-config)
+    - [Remote Config (with auth)](#remote-config-with-auth)
+  - [Docker (single container)](#3-docker-single-container)
+    - [Build image](#build-image)
+    - [Run with local config](#run-with-local-config)
+    - [Run with remote config](#run-with-remote-config)
+- [Testing](#testing)
+  - [Unit Tests](#unit-tests)
+  - [Integration Tests](#integration-tests)
 
-## Configuration
+## Requirements
 
-The watchdog service can be configured using either:
+- **Go 1.23+**
 
-- A **local JSON configuration file** (`--config-file`).
-- A **remote JSON configuration URL** (`--config-url`).
-  - Using a remote configuration allows you to dynamically add, remove, or update server configurations at runtime.
+## Setup
 
-### JSON Configuration Format
+### Configuration
 
-The JSON configuration file should contain an array of `ObaServer` objects, each representing an OBA server to be monitored. Example:
+Watchdog requires a configuration file (`config.json`) before running. Even placeholder data is necessary to start the service.
+
+#### Example `config.json`
 
 ```json
 [
@@ -35,110 +60,132 @@ The JSON configuration file should contain an array of `ObaServer` objects, each
     "gtfs_rt_api_key": "api-key-1",
     "gtfs_rt_api_value": "api-value-1",
     "agency_id": "agency-1"
-  },
-  {
-    "name": "Test Server 2",
-    "id": 2,
-    "oba_base_url": "https://test2.example.com",
-    "oba_api_key": "test-key-2",
-    "gtfs_url": "https://gtfs2.example.com",
-    "trip_update_url": "https://trip2.example.com",
-    "vehicle_position_url": "https://vehicle2.example.com",
-    "gtfs_rt_api_key": "api-key-2",
-    "gtfs_rt_api_value": "api-value-2",
-    "agency_id": "agency-2"
   }
 ]
 ```
 
-### Local Configuration Setup
+#### Ways to Provide the Config File
 
-1. Either copy or rename `config.json.template` to `config.json` in the same folder.
-2. Update `config.json` with your OBA server values.
+#### 1. Local Configuration (recommended for development)
 
-Note: The `config.json` file is ignored by Git to prevent accidental commits of sensitive configuration data.
-
-### Remote Configuration Setup
-
-1. Create a `config.json` file based on the `config.json.template` format.
-2. Fill in your OBA server values in `config.json`.
-3. Host it publicly and point the app to its URL.
-
-## Sentry Configuration
-
-To enable Sentry error tracking, set the `SENTRY_DSN` environment variable with your Sentry DSN.
-
-```sh
-export SENTRY_DSN="your_sentry_dsn"
-```
-
-# Running
-
-#### **Using a Local Configuration File**
+- Copy or rename `config.json.template` → `config.json`
+- Fill in your server values
+- Run with:
 
 ```bash
-go run ./cmd/watchdog/ --config-file ./config.json
+go run ./cmd/watchdog/ --config-file path/to/config.json
 ```
 
-## **Using a Remote Configuration URL with Authentication**
+Note:
 
-To load the configuration from a remote URL that requires basic authentication, follow these steps:
+- ⚠️The file **must** be named `config.json`
+- `config.json` is Git-ignored (to protect secrets)
 
-### 1. **Set the Required Environment Variables**
+#### 2. Remote Configuration (recommended for production)
 
-Before running the application, set the `CONFIG_AUTH_USER` and `CONFIG_AUTH_PASS` environment variables with the username and password for authentication.
-
-#### On Linux/macOS:
+- Prepare `config.json` as above
+- Host it publicly (or on a private server)
+- Run with:
 
 ```bash
-export CONFIG_AUTH_USER="your_username"
-export CONFIG_AUTH_PASS="your_password"
+go run ./cmd/watchdog/ --config-url http://example.com/config.json
 ```
 
-#### On Windows
+If authentication is required, set:
 
 ```bash
-set CONFIG_AUTH_USER=your_username
-set CONFIG_AUTH_PASS=your_password
+export CONFIG_AUTH_USER="username"
+export CONFIG_AUTH_PASS="password"
 ```
 
-#### Run the Application with the Remote URL
+### Application Options
 
-Use the --config-url flag to specify the remote configuration URL. For example:
+- **Fetch Interval** → default `30s` (`--fetch-interval <seconds>`)
+- **Environment** → `development` (default), `staging`, `production` (`--env <value>`)
+- **Port** → default `4000` (`--port <number>`)
+
+⚠️ If running with **Docker Compose**, Prometheus runs on `9090` and Grafana on `3000`. Don’t use those ports.
+
+### Environment Variables
+
+- **Sentry DSN**
+
+```bash
+    export SENTRY_DSN="your_sentry_dsn"
+```
+
+- **Config Auth (for remote configs)**
+
+```bash
+    export CONFIG_AUTH_USER="username"
+    export CONFIG_AUTH_PASS="password"
+```
+
+## Running
+
+### 1. Docker Compose (recommended)
+
+Run Watchdog with **Prometheus + Grafana**:
+
+```bash
+docker compose up --build
+```
+
+Services:
+
+- Watchdog → `4000`
+- Prometheus → `9090`
+- Grafana → `3000`
+
+Stop services:
+
+```bash
+docker compose down
+```
+
+Restart services:
+
+```bash
+docker compose restart
+```
+
+Grafana auto-loads a Go runtime dashboard. Prometheus is pre-configured to scrape Watchdog.
+
+### 2. Watchdog Only
+
+#### Local Config
+
+```bash
+go run ./cmd/watchdog/ --config-file path/to/config.json
+```
+
+#### Remote Config (with auth)
 
 ```bash
 go run ./cmd/watchdog/ \
   --config-url http://example.com/config.json
 ```
 
-## **Running with Docker**
+### 3. Docker (single container)
 
-You can also run the application using Docker. Here’s how:
-
-### 1. **Build the Docker Image**
-
-First, build the Docker image for the application. Navigate to the root of the project directory and run:
+#### Build image
 
 ```bash
 docker build -t watchdog .
 ```
 
-### 2. **Run the Docker Container**
-
-#### 2.1 **Using Local Config**
+#### Run with local config
 
 ```bash
 docker run -d \
   --name watchdog \
-  -e CONFIG_AUTH_USER=admin \
-  -e CONFIG_AUTH_PASS=password \
   -v ./config.json:/app/config.json \
   -p 4000:4000 \
   watchdog \
   --config-file /app/config.json
 ```
 
-#### 2.2 **Using Remote Config**
+#### Run with remote config
 
 ```bash
 docker run -d \
@@ -150,64 +197,26 @@ docker run -d \
   --config-url http://example.com/config.json
 ```
 
-## **Running with Docker Compose**
+## Testing
 
-You can run the Watchdog service along with Prometheus and Grafana for monitoring using Docker Compose.
-
-**Important:**
-
-> Make sure `config.json` exists before running any Docker commands.  
-> It must be a **file**, not a folder.
-
-### **Start all services**
-
-```bash
-docker compose up -d
-```
-
-This will start:
-
-- **Watchdog** on port `4000`
-- **Prometheus** on port `9090`
-- **Grafana** on port `3000`
-
-### **Stop all services**
-
-```bash
-docker compose down
-```
-
-### **Restart all services**
-
-```bash
-docker compose restart
-```
-
-Grafana will automatically load the pre-provisioned Go runtime dashboard, and Prometheus will be configured to scrape Watchdog metrics.
-
-# Testing
-
-### To run all unit test cases:
+### Unit Tests
 
 ```bash
 go test ./...
 ```
 
-### To run integration testing
+### Integration Tests
 
-Follow these steps:
-
-1. Open the file `integration_servers.json.template` inside the `internal/integration` package.
-2. Rename it to `integration_servers.json`.
-3. Fill in your OBA server configuration values.
-
-Then run:
+- Copy `integration_config.json.template` → `integration_config.json`
+- Fill in OBA server values
+- Run:
 
 ```bash
-go test -tags=integration ./internal/integration -integration-config ./integration_servers.json
+go test -tags=integration ./internal/integration \
+  -integration-config path/to/integration_config.json
 ```
 
 Note:
 
-- The `integration_servers.json` file is ignored by Git to prevent accidental commits of sensitive data.
-- You can point to any config file by passing its path using the -integration-config flag.
+- ⚠️ the file **must** be named `integration_config.json`
+- It’s Git-ignored for safety
