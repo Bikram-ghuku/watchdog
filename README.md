@@ -34,6 +34,7 @@ It exposes a comprehensive set of **Prometheus metrics** for monitoring:
 - [Testing](#testing)
   - [Unit Tests](#unit-tests)
   - [Integration Tests](#integration-tests)
+- [Contributing](#contributing)
 
 ## Requirements
 
@@ -220,3 +221,7 @@ Note:
 
 - ⚠️ the file **must** be named `integration_config.json`
 - It’s Git-ignored for safety
+
+## Contributing
+
+Refer to [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed contribution guidelines.
