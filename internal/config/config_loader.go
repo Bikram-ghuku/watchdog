@@ -103,11 +103,15 @@ func loadConfigFromFile(filePath string) ([]models.ObaServer, error) {
 	return servers, nil
 }
 
-// LoadConfigFromURL fetches a JSON configuration from a remote HTTP(S) endpoint,
+// loadConfigFromURL fetches a JSON configuration from a remote HTTP(S) endpoint,
 // using the provided client and optional basic authentication.
 //
 // It validates the response status, reads the body, and unmarshals the configuration
 // into a slice of `models.ObaServer`.
+//
+// Requests are executed with exponential backoff using DoWithBackoff. This ensures
+// that transient network errors (e.g., timeouts, connection failures) are retried
+// with increasing delays, up to `maxRetries` attempts.
 //
 // Errors are logged and reported to Sentry for observability.
 func loadConfigFromURL(ctx context.Context, client *http.Client, url, authUser, authPass string, maxRetries int) ([]models.ObaServer, error) {

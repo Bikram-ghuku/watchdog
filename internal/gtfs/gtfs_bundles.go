@@ -106,10 +106,12 @@ func refreshGTFSBundles(ctx context.Context, servers []models.ObaServer, logger 
 }
 
 // downloadAndStoreGTFSBundle fetches a GTFS static bundle from the provided URL,
-// parses it, and stores the resulting static data in the given StaticStore using the serverID as the key.
+// parses it, and stores the resulting static data in the given StaticStore using
+// the serverID as the key. Requests are executed with exponential backoff to handle
+// transient network errors (e.g., timeouts, connection failures).
 //
 // It performs the following steps:
-//   1. Makes an HTTP GET request to download the GTFS bundle.
+//   1. Makes an HTTP GET request (with exponential backoff) to download the GTFS bundle.
 //   2. Reads and parses the response body as GTFS static data.
 //   3. Stores the parsed data in the StaticStore.
 //
@@ -117,10 +119,11 @@ func refreshGTFSBundles(ctx context.Context, servers []models.ObaServer, logger 
 //   - url: The URL of the GTFS static bundle (usually a zip file).
 //   - serverID: The identifier used to store and retrieve the static data from the store.
 //   - staticStore: The in-memory store that holds GTFS static data indexed by server ID.
+//   - maxRetries: The maximum number of retry attempts allowed during exponential backoff
+//                 before giving up on reaching the server
 //
 // Returns:
 //   - gtfs static data
-//   - boolean severs as a sign if the request reached the server or not (server timeout or down)
 //   - error: Describes what went wrong, or nil if the operation was successful.
 
 func downloadGTFSBundle(ctx context.Context, url string, serverID int, maxRetries int) (*remoteGtfs.Static, error) {
