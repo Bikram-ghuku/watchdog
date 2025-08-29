@@ -20,21 +20,29 @@ import (
 	"watchdog.onebusaway.org/internal/utils"
 )
 
-// downloadGTFSBundles fetches and processes GTFS static bundles for a list of OBA servers.
+// downloadGTFSBundles fetches and processes GTFS static bundles concurrently for a list of OBA servers.
 //
-// For each server, it:
-//   1. Downloads and parses the GTFS static bundle using the server's GTFS URL.
-//   2. Stores the parsed data in the provided StaticStore.
-//   3. Computes a geographic bounding box based on the stop locations in the static data.
+// For each server, it starts a dedicated goroutine that:
+//   1. Attempts to download and parse the GTFS static bundle from the server’s GTFS URL,
+//      using exponential backoff with retries (up to maxRetries).
+//   2. Stores the parsed GTFS static data in the provided StaticStore, keyed by server ID.
+//   3. Computes a geographic bounding box from the stop locations in the static data.
 //   4. Stores the bounding box in the provided BoundingBoxStore.
 //
-// Parameters:
-//   - servers: A list of OBA servers, each containing a GTFS URL and unique ID.
-//   - logger: A structured logger used to record success/failure logs for each server.
-//   - boundingBoxStore: A store for bounding boxes, one per server.
-//   - staticStore: A store for parsed GTFS static data, keyed by server ID.
+// Concurrency:
+//   - A goroutine is launched for each server.
+//   - sync.WaitGroup is used to ensure all goroutines complete before the function returns.
+//   - Errors are handled per-server, reported via Sentry and logs, but do not stop processing other servers.
 //
-// This function does not return an error; failures are handled and reported per-server.
+// Parameters:
+//   - ctx: Context used to manage cancellation and timeouts across all goroutines.
+//   - servers: A list of OBA servers, each containing a GTFS URL and unique ID.
+//   - logger: A structured logger for recording success/failure logs.
+//   - boundingBoxStore: A store for computed bounding boxes, one per server.
+//   - staticStore: A store for parsed GTFS static data, keyed by server ID.
+//   - maxRetries: The maximum number of retries (with exponential backoff) when downloading a bundle.
+//
+// This function does not return an error; failures are handled and reported individually per server.
 
 func downloadGTFSBundles(ctx context.Context, servers []models.ObaServer, logger *slog.Logger, boundingBoxStore *geo.BoundingBoxStore, staticStore *StaticStore, maxRetries int) {
 	var wg sync.WaitGroup
@@ -77,9 +85,10 @@ func downloadGTFSBundles(ctx context.Context, servers []models.ObaServer, logger
 // refreshGTFSBundles periodically refreshes GTFS static bundles for a list of OBA servers.
 //
 // It runs in a loop, triggered at the specified interval, and performs the following:
-//  1. Logs the refresh operation.
-//  2. Calls DownloadGTFSBundles to fetch, parse, and store updated GTFS data.
-//  3. Updates geographic bounding boxes based on the downloaded data.
+//   1. Logs the refresh operation.
+//   2. Calls downloadGTFSBundles to fetch, parse, and store updated GTFS data for all servers.
+//      - Each server’s bundle download uses exponential backoff with retries, up to maxRetries attempts.
+//   3. Updates geographic bounding boxes based on the downloaded data.
 //
 // The function listens for context cancellation (`ctx.Done()`) to gracefully stop the refresh routine.
 //
@@ -88,8 +97,10 @@ func downloadGTFSBundles(ctx context.Context, servers []models.ObaServer, logger
 //   - servers: List of OBA servers to fetch GTFS data from.
 //   - logger: Logger for structured logging of refresh activity.
 //   - interval: Time duration between each refresh cycle.
-//   - boundingBoxstore: Store to keep geographic bounding boxes per server.
+//   - boundingBoxStore: Store to keep geographic bounding boxes per server.
 //   - staticStore: Store to keep parsed GTFS static data per server.
+//   - maxRetries: Maximum number of retries (with exponential backoff) for each server’s bundle download.
+
 func refreshGTFSBundles(ctx context.Context, servers []models.ObaServer, logger *slog.Logger, interval time.Duration, boundingBoxstore *geo.BoundingBoxStore, staticStore *StaticStore, maxRetries int) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -187,6 +198,24 @@ func downloadGTFSBundle(ctx context.Context, url string, serverID int, maxRetrie
 	return staticBundle, nil
 
 }
+
+// storeGTFSBundle stores a parsed GTFS static bundle in memory and computes its bounding box.
+//
+// The function performs the following:
+//   1. Wraps the GTFS static bundle into a StaticData object, keeping only the relevant parts
+//      needed by the application to avoid storing the full bundle in memory.
+//   2. Stores the StaticData in the StaticStore, keyed by serverID.
+//   3. Computes the bounding box from the stops in the GTFS data.
+//   4. Stores the bounding box in the BoundingBoxStore, also keyed by serverID.
+//
+// Parameters:
+//   - staticBundle: The parsed GTFS static bundle containing routes, stops, and other transit data.
+//   - serverID: The identifier used to store and retrieve data for a specific server.
+//   - staticStore: The in-memory store holding GTFS static data indexed by server ID.
+//   - boundingBoxStore: The in-memory store holding computed bounding boxes for GTFS data.
+//
+// Returns:
+//   - error: If computing the bounding box fails, an error is returned. Otherwise, nil.
 
 func storeGTFSBundle(staticBundle *remoteGtfs.Static, serverID int, staticStore *StaticStore, boundingBoxStore *geo.BoundingBoxStore) error {
 	// StaticData is a wrapper around the GTFS static bundle

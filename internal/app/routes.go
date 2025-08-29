@@ -13,9 +13,11 @@ import (
 
 // Routes sets up the HTTP routing configuration for the application and returns the final http.Handler.
 //
-// This function initializes a new `httprouter.Router`, registers all application routes
-// with their corresponding handler functions and HTTP methods, and wraps the entire router
-// with Sentry middleware for centralized error tracking and performance monitoring.
+// This function initializes a new `httprouter.Router`, registers all routes with their handlers,
+// and wraps the router with Sentry and security middleware.
+//
+// Parameters:
+//   - ctx: Carries deadlines/cancellation and is passed to the cached Prometheus handler.
 //
 // Registered Routes:
 //   - GET /v1/healthcheck:
@@ -27,26 +29,22 @@ import (
 //     reduces collection overhead by caching exposition output for a configurable duration.
 //
 // Middleware:
-//   - `middleware.SentryMiddleware`:
-//     Wraps the router to automatically capture any panics, errors, or performance issues
-//     and report them to Sentry with contextual request data.
+//   - middleware.SentryMiddleware:
+//     Captures panics/errors and reports them to Sentry with request context.
+//   - middleware.SecurityHeaders:
+//     Adds HTTP security-related headers to every response.
 //
 // Purpose:
-//   - Centralize route registration for modularity and testability.
-//   - Establish a clear entry point for all incoming HTTP traffic.
-//   - Ensure observability via Prometheus and Sentry integrations.
+//   - Centralize route registration for modularity, testability, and a clear entry point
+//     for all incoming HTTP traffic.
+//   - Wire core middleware to ensure observability (Sentry, Prometheus) and baseline
+//     HTTP security headers.
 //   - Improve performance and reduce Prometheus scrape overhead through cached metrics.
+//   - Support graceful cancellation and shutdown via ctx.
 //
 // Returns:
 //   - An `http.Handler` instance that the server can use to handle incoming HTTP requests.
-//
-// Usage:
-//
-//	Typically called during application startup and passed to `http.Server`:
-//	  server := &http.Server{
-//	      Addr:    ":4000",
-//	      Handler: app.Routes(ctx),
-//	  }
+
 func (app *Application) Routes(ctx context.Context) http.Handler {
 	// Initialize a new httprouter router instance.
 	router := httprouter.New()
@@ -58,7 +56,7 @@ func (app *Application) Routes(ctx context.Context) http.Handler {
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
 	router.Handler(http.MethodGet, "/metrics", middleware.NewCachedPromHandler(ctx, prometheus.DefaultGatherer, 10*time.Second))
 
-	// Wrap router with Sentry and securityHeaders middlewares
+	// Wrap router with Sentry and SecurityHeaders middlewares
 	// Return wrapped httprouter instance.
 	handler := middleware.SentryMiddleware(router)
 	return middleware.SecurityHeaders(handler)
