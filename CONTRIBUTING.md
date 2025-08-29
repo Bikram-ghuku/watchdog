@@ -1,6 +1,6 @@
 # Contributing to Watchdog
 
-Participating in this project means you agree to follow the [OBA Code of Conduct](https://github.com/OneBusAway/onebusaway/blob/master/CODE_OF_CONDUCT.md).
+Please note that this project is released with a [Code of Conduct](./CODE_OF_CONDUCT.md); by participating, you agree to uphold its terms.
 
 ## How to Contribute
 
