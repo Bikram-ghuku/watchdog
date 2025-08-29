@@ -11,31 +11,6 @@ It exposes a comprehensive set of **Prometheus metrics** for monitoring:
 - Overall operational health
   See the full list of metrics and interpretation guide [here](./docs/METRICS.md)
 
-## Table of Contents
-
-- [Requirements](#requirements)
-- [Setup](#setup)
-  - [Configuration](#configuration)
-    - [Example config.json](#example-configjson)
-    - [Ways to Provide the Config File](#ways-to-provide-the-config-file)
-      - [Local Configuration (recommended for development)](#1-local-configuration-recommended-for-development)
-      - [Remote Configuration (recommended for production)](#2-remote-configuration-recommended-for-production)
-  - [Application Options](#application-options)
-  - [Environment Variables](#environment-variables)
-- [Running](#running)
-  - [Docker Compose (recommended)](#1-docker-compose-recommended)
-  - [Watchdog Only](#2-watchdog-only)
-    - [Local Config](#local-config)
-    - [Remote Config (with auth)](#remote-config-with-auth)
-  - [Docker (single container)](#3-docker-single-container)
-    - [Build image](#build-image)
-    - [Run with local config](#run-with-local-config)
-    - [Run with remote config](#run-with-remote-config)
-- [Testing](#testing)
-  - [Unit Tests](#unit-tests)
-  - [Integration Tests](#integration-tests)
-- [Contributing](#contributing)
-
 ## Requirements
 
 - **Go 1.23+**
