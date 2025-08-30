@@ -2,7 +2,7 @@
 
 [![Coverage Status](https://coveralls.io/repos/github/OneBusAway/watchdog/badge.svg?branch=main)](https://coveralls.io/github/OneBusAway/watchdog?branch=main)
 
-**Watchdog** is a Go-based service that monitors [OneBusAway (OBA)](https://onebusaway.org/) REST API servers.  
+**Watchdog** is a Go-based service that monitors [OneBusAway (OBA)](https://onebusaway.org/) REST API servers.
 It exposes a comprehensive set of **Prometheus metrics** for monitoring:
 
 - GTFS Static and GTFS-RT data integrity
@@ -99,6 +99,8 @@ export CONFIG_AUTH_PASS="password"
 
 ## Running
 
+It may take a few minutes for Watchdog to start exposing data to Prometheus, since initial setup includes tasks such as downloading the GTFS bundle.
+
 ### 1. Docker Compose (recommended)
 
 Run Watchdog with **Prometheus + Grafana**:
@@ -127,6 +129,8 @@ docker compose restart
 
 Grafana auto-loads a Go runtime dashboard. Prometheus is pre-configured to scrape Watchdog.
 
+See [Endpoints](#endpoints) to access metrics, health checks, Grafana, and Prometheus.
+
 ### 2. Watchdog Only
 
 #### Local Config
@@ -141,6 +145,8 @@ go run ./cmd/watchdog/ --config-file path/to/config.json
 go run ./cmd/watchdog/ \
   --config-url http://example.com/config.json
 ```
+
+See [Endpoints](#endpoints) to access metrics and health checks.
 
 ### 3. Docker (single container)
 
@@ -172,6 +178,26 @@ docker run -d \
   watchdog \
   --config-url http://example.com/config.json
 ```
+
+See [Endpoints](#endpoints) to access metrics and health checks.
+
+## Endpoints
+
+During **development** (using `localhost`):
+
+- Watchdog Metrics: [http://localhost:4000/metrics](http://localhost:4000/metrics)
+- Watchdog Health Check: [http://localhost:4000/v1/healthcheck](http://localhost:4000/v1/healthcheck)
+- Grafana: [http://localhost:3000/login](http://localhost:3000/login) → default user/pass: `admin` / `admin`
+- Prometheus Targets: [http://localhost:9090/targets](http://localhost:9090/targets)
+- Prometheus Query: [http://localhost:9090/query](http://localhost:9090/query)
+
+During **production** (replace `<server-ip-or-domain>`):
+
+- Watchdog Metrics: `http://<server-ip-or-domain>:4000/metrics`
+- Watchdog Health Check: `http://<server-ip-or-domain>:4000/v1/healthcheck`
+- Grafana: `http://<server-ip-or-domain>:3000/login`
+- Prometheus Targets: `http://<server-ip-or-domain>:9090/targets`
+- Prometheus Query: `http://<server-ip-or-domain>:9090/query`
 
 ## Testing
 
