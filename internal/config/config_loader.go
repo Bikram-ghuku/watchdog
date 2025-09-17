@@ -32,16 +32,30 @@ func ValidateConfigFlags(configFile, configURL *string) error {
 	return nil
 }
 
-// refreshConfig starts a background goroutine that periodically fetches configuration
-// from a remote URL and updates the application's list of OBA servers.
+// refreshConfig starts a background goroutine that periodically fetches
+// configuration from a remote URL and updates the application's list of OBA servers.
 //
-// It uses the provided HTTP client to make GET requests with optional basic auth,
-// and on success, updates the application's configuration via `app.Config.UpdateConfig`.
+// The fetch process is resilient:
+//   - It uses `loadConfigFromURL`, which applies exponential backoff retries
+//     (up to `maxRetries`) when transient network or parsing errors occur.
+//   - On success, the application's configuration is updated via `cfg.UpdateConfig`.
+//   - On failure, errors are logged and reported to Sentry, but the loop continues,
+//     ensuring that the service keeps running even under repeated failures.
 //
-// Errors during fetch or parse are logged and reported to Sentry, but the loop continues,
-// ensuring resiliency in the presence of transient issues.
+// The function runs in a loop, sleeping for the specified `interval` between
+// refresh attempts, and terminates gracefully when the context is canceled.
 //
-// The routine stops gracefully when the context is canceled.
+// Parameters:
+//   - ctx: Context for graceful cancellation of the refresh routine.
+//   - client: HTTP client used to fetch the remote config.
+//   - configURL: Remote URL to load configuration from.
+//   - configAuthUser: Optional username for basic authentication.
+//   - configAuthPass: Optional password for basic authentication.
+//   - cfg: Pointer to the application Config object to update.
+//   - logger: Logger for structured log output.
+//   - interval: Time duration between consecutive refresh attempts.
+//   - maxRetries: Maximum number of exponential backoff retries per fetch attempt.
+
 func refreshConfig(ctx context.Context, client *http.Client, configURL, configAuthUser, configAuthPass string, cfg *Config, logger *slog.Logger, interval time.Duration, maxRetries int) {
 	for {
 		select {
@@ -103,11 +117,15 @@ func loadConfigFromFile(filePath string) ([]models.ObaServer, error) {
 	return servers, nil
 }
 
-// LoadConfigFromURL fetches a JSON configuration from a remote HTTP(S) endpoint,
+// loadConfigFromURL fetches a JSON configuration from a remote HTTP(S) endpoint,
 // using the provided client and optional basic authentication.
 //
 // It validates the response status, reads the body, and unmarshals the configuration
 // into a slice of `models.ObaServer`.
+//
+// Requests are executed with exponential backoff using DoWithBackoff. This ensures
+// that transient network errors (e.g., timeouts, connection failures) are retried
+// with increasing delays, up to `maxRetries` attempts.
 //
 // Errors are logged and reported to Sentry for observability.
 func loadConfigFromURL(ctx context.Context, client *http.Client, url, authUser, authPass string, maxRetries int) ([]models.ObaServer, error) {

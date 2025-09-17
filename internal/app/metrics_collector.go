@@ -69,6 +69,28 @@ func (app *Application) StartMetricsCollection(ctx context.Context) {
 // but the process continues unless the GTFS-RT feed fails — in which case the function returns early,
 // as later checks depend on the real-time data.
 //
+// Exponential Backoff:
+//
+//	Unlike typical blocking backoff (e.g., retry loops with time.Sleep), this function uses a
+//	per-server backoff map (BackoffStore). Each server has a backoff delay and a calculated
+//	nextRetryAt timestamp. Before attempting a ping, the function checks whether the current time
+//	is still before nextRetryAt; if so, the entire metrics collection for that server is skipped.
+//
+//	When a server fails, its backoff delay is increased exponentially and nextRetryAt is updated.
+//	When a server responds successfully, its backoff state is reset.
+//
+// Why this design?
+//
+//	  The StartMetricsCollection scheduler runs every `FetchInterval` (default: 30 seconds) for each server.
+//		If we used a standard blocking backoff inside CollectMetricsForServer, the backoff delay could exceed
+//	  30 seconds, causing overlapping goroutines (multiple retries running concurrently for the same
+//	  server). By storing backoff state per server and checking it on each scheduled run, we ensure:
+//	    - No overlapping goroutines per server.
+//	    - Retry intervals still grow exponentially.
+//	    - Retries align with the FetchInterval collection cycle, meaning the effective backoff wait time
+//	 			is always a multiple of FetchInterval.
+//	  This keeps retries predictable, efficient, and non-blocking across all monitored servers.
+//
 // Purpose:
 //   - Centralizes all server-level metric gathering for reusability and testability.
 //   - Ensures that all health and performance indicators are collected in one place.
@@ -79,8 +101,10 @@ func (app *Application) StartMetricsCollection(ctx context.Context) {
 //   - Sentry reports are tagged for fast debugging and correlation in distributed systems.
 //   - Dependencies are injected (via app fields) to support testability and separation of concerns.
 func (app *Application) CollectMetricsForServer(server models.ObaServer) {
+	// Check if server has an active backoff period
 	nextRetryAt, exists := app.ConfigService.BackoffStore.NextRetryAt(server.ID)
 	if exists && time.Now().UTC().Before(nextRetryAt) {
+		// Still in backoff → skip metrics collection
 		app.Logger.Info("Skipping metrics collection for server due to backoff", "server_id", server.ID, "next_retry_at", nextRetryAt)
 		report.ReportErrorWithSentryOptions(fmt.Errorf("skipping metrics collection for server %s due to backoff", server.ObaBaseURL), report.SentryReportOptions{
 			Tags: map[string]string{
@@ -97,6 +121,7 @@ func (app *Application) CollectMetricsForServer(server models.ObaServer) {
 
 	ok := app.MetricsService.ServerPing(server)
 	if !ok {
+		// On ping failure → increase backoff for this server
 		app.Logger.Error("Server ping failed", "server_id", server.ID, "server_name", server.Name)
 		report.ReportErrorWithSentryOptions(fmt.Errorf("server ping failed for %s", server.ObaBaseURL), report.SentryReportOptions{
 			Tags: map[string]string{
@@ -113,6 +138,7 @@ func (app *Application) CollectMetricsForServer(server models.ObaServer) {
 		return
 	}
 
+	// On successful ping → reset backoff for this server
 	app.Logger.Info("Server ping successful", "server_id", server.ID, "server_name", server.Name)
 	app.ConfigService.BackoffStore.ResetBackoff(server.ID)
 

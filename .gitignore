@@ -38,4 +38,4 @@ profile.cov
 config.json
 
 # Avoid Committing Integration testing configuration file
-integration_servers.json
+integration_config.json
