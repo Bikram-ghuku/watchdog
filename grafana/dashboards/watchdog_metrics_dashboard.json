@@ -238,7 +238,7 @@
           }
         },
         {
-          "expr": "oba_time_since_last_update_seconds",
+          "expr": "oba_time_since_last_update_seconds{server=~\"$server_id\", agency=~\"$agency_id\"}",
           "refId": "B",
           "datasource": {
             "name": "Prometheus"
@@ -323,28 +323,28 @@
       "id": 401,
       "targets": [
         {
-          "expr": "oba_realtime_records_total",
+          "expr": "oba_realtime_records_total{server=~\"$server_id\", agency=~\"$agency_id\"}",
           "refId": "A",
           "datasource": {
             "name": "Prometheus"
           }
         },
         {
-          "expr": "oba_realtime_trips_matched_count",
+          "expr": "oba_realtime_trips_matched_count{server=~\"$server_id\", agency=~\"$agency_id\"}",
           "refId": "B",
           "datasource": {
             "name": "Prometheus"
           }
         },
         {
-          "expr": "oba_realtime_trips_unmatched_count",
+          "expr": "oba_realtime_trips_unmatched_count{server=~\"$server_id\", agency=~\"$agency_id\"}",
           "refId": "C",
           "datasource": {
             "name": "Prometheus"
           }
         },
         {
-          "expr": "oba_realtime_trip_match_ratio",
+          "expr": "oba_realtime_trip_match_ratio{server=~\"$server_id\", agency=~\"$agency_id\"}",
           "refId": "D",
           "datasource": {
             "name": "Prometheus"
@@ -368,21 +368,21 @@
       "id": 402,
       "targets": [
         {
-          "expr": "oba_stops_matched_count",
+          "expr": "oba_stops_matched_count{server=~\"$server_id\", agency=~\"$agency_id\"}",
           "refId": "A",
           "datasource": {
             "name": "Prometheus"
           }
         },
         {
-          "expr": "oba_stops_unmatched_count",
+          "expr": "oba_stops_unmatched_count{server=~\"$server_id\", agency=~\"$agency_id\"}",
           "refId": "B",
           "datasource": {
             "name": "Prometheus"
           }
         },
         {
-          "expr": "oba_stop_match_ratio",
+          "expr": "oba_stop_match_ratio{server=~\"$server_id\", agency=~\"$agency_id\"}",
           "refId": "C",
           "datasource": {
             "name": "Prometheus"
@@ -406,14 +406,14 @@
       "id": 403,
       "targets": [
         {
-          "expr": "oba_agencies_with_coverage_count",
+          "expr": "oba_agencies_with_coverage_count{server=~\"$server_id\"}",
           "refId": "A",
           "datasource": {
             "name": "Prometheus"
           }
         },
         {
-          "expr": "oba_scheduled_trips_count",
+          "expr": "oba_scheduled_trips_count{server=~\"$server_id\", agency=~\"$agency_id\"}",
           "refId": "B",
           "datasource": {
             "name": "Prometheus"
