@@ -1,0 +1,641 @@
+{
+  "__inputs": [],
+  "__requires": [],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 100,
+      "panels": [],
+      "title": "1. System Availability",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "name": "Prometheus"
+      },
+      "description": "Metrics: oba_api_status\nQuestion answered: \"Is the API up?\"",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 1
+      },
+      "id": 101,
+      "targets": [
+        {
+          "expr": "oba_api_status{server_id=~\"$server_id\"}",
+          "refId": "A",
+          "datasource": {
+            "name": "Prometheus"
+          }
+        }
+      ],
+      "title": "1.1 API Status",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "name": "Prometheus"
+      },
+      "description": "Metrics: http_outgoing_request_duration_seconds\nQuestion answered: \"Are external dependencies becoming slow?\"",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 1
+      },
+      "id": 102,
+      "targets": [
+        {
+          "expr": "http_outgoing_request_duration_seconds_sum",
+          "refId": "A",
+          "datasource": {
+            "name": "Prometheus"
+          }
+        }
+      ],
+      "title": "1.2 Dependency Latency",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
+      "id": 200,
+      "panels": [],
+      "title": "2. Static GTFS Health",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "name": "Prometheus"
+      },
+      "description": "Metrics: gtfs_bundle_days_until_earliest_expiration, gtfs_bundle_days_until_latest_expiration\nQuestion answered: \"Are GTFS bundles approaching expiration?\"",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 10
+      },
+      "id": 201,
+      "targets": [
+        {
+          "expr": "gtfs_bundle_days_until_earliest_expiration{server_id=~\"$server_id\"}",
+          "refId": "A",
+          "datasource": {
+            "name": "Prometheus"
+          }
+        },
+        {
+          "expr": "gtfs_bundle_days_until_latest_expiration{server_id=~\"$server_id\"}",
+          "refId": "B",
+          "datasource": {
+            "name": "Prometheus"
+          }
+        }
+      ],
+      "title": "2.1 Feed Expiration",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "name": "Prometheus"
+      },
+      "description": "Metrics: oba_agencies_in_static_gtfs, oba_agencies_in_coverage_endpoint, oba_agencies_match\nQuestion answered: \"Does the coverage endpoint match the static GTFS dataset?\"",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 10
+      },
+      "id": 202,
+      "targets": [
+        {
+          "expr": "oba_agencies_in_static_gtfs{server_id=~\"$server_id\"}",
+          "refId": "A",
+          "datasource": {
+            "name": "Prometheus"
+          }
+        },
+        {
+          "expr": "oba_agencies_in_coverage_endpoint{server_id=~\"$server_id\"}",
+          "refId": "B",
+          "datasource": {
+            "name": "Prometheus"
+          }
+        },
+        {
+          "expr": "oba_agencies_match{server_id=~\"$server_id\"}",
+          "refId": "C",
+          "datasource": {
+            "name": "Prometheus"
+          }
+        }
+      ],
+      "title": "2.2 Agency Consistency",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 18
+      },
+      "id": 300,
+      "panels": [],
+      "title": "3. Realtime Feed Health",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "name": "Prometheus"
+      },
+      "description": "Metrics: realtime_vehicle_positions_count_gtfs_rt, vehicle_count_api, gtfs_rt_tracked_vehicles_count\nQuestion answered: \"Is realtime coverage dropping?\"",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 19
+      },
+      "id": 301,
+      "targets": [
+        {
+          "expr": "realtime_vehicle_positions_count_gtfs_rt{server_id=~\"$server_id\"}",
+          "refId": "A",
+          "datasource": {
+            "name": "Prometheus"
+          }
+        },
+        {
+          "expr": "vehicle_count_api{server_id=~\"$server_id\", agency_id=~\"$agency_id\"}",
+          "refId": "B",
+          "datasource": {
+            "name": "Prometheus"
+          }
+        },
+        {
+          "expr": "gtfs_rt_tracked_vehicles_count{server_id=~\"$server_id\"}",
+          "refId": "C",
+          "datasource": {
+            "name": "Prometheus"
+          }
+        }
+      ],
+      "title": "3.1 Vehicle Volume",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "name": "Prometheus"
+      },
+      "description": "Metrics: vehicle_position_report_interval_seconds, oba_time_since_last_update_seconds\nQuestion answered: \"How stale is realtime data?\"",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 19
+      },
+      "id": 302,
+      "targets": [
+        {
+          "expr": "vehicle_position_report_interval_seconds{server_id=~\"$server_id\"}",
+          "refId": "A",
+          "datasource": {
+            "name": "Prometheus"
+          }
+        },
+        {
+          "expr": "oba_time_since_last_update_seconds{server=~\"$server_id\", agency=~\"$agency_id\"}",
+          "refId": "B",
+          "datasource": {
+            "name": "Prometheus"
+          }
+        }
+      ],
+      "title": "3.2 Feed Freshness",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "name": "Prometheus"
+      },
+      "description": "Metrics: vehicle_report_total\nQuestion answered: \"Are realtime updates continuously flowing?\"",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 27
+      },
+      "id": 303,
+      "targets": [
+        {
+          "expr": "vehicle_report_total{server_id=~\"$server_id\"}",
+          "refId": "A",
+          "datasource": {
+            "name": "Prometheus"
+          }
+        }
+      ],
+      "title": "3.3 Update Throughput",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "name": "Prometheus"
+      },
+      "description": "Metrics: vehicle_count_match\nQuestion answered: \"Does the API reflect GTFS-RT correctly?\"",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 27
+      },
+      "id": 304,
+      "targets": [
+        {
+          "expr": "vehicle_count_match{server_id=~\"$server_id\", agency_id=~\"$agency_id\"}",
+          "refId": "A",
+          "datasource": {
+            "name": "Prometheus"
+          }
+        }
+      ],
+      "title": "3.4 API \u2194 GTFS-RT Consistency",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 35
+      },
+      "id": 400,
+      "panels": [],
+      "title": "4. Matching Quality",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "name": "Prometheus"
+      },
+      "description": "Metrics: oba_realtime_records_total, oba_realtime_trips_matched_count, oba_realtime_trips_unmatched_count, oba_realtime_trip_match_ratio\nQuestion answered: \"How much realtime trip data is usable?\"",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 36
+      },
+      "id": 401,
+      "targets": [
+        {
+          "expr": "oba_realtime_records_total{server=~\"$server_id\", agency=~\"$agency_id\"}",
+          "refId": "A",
+          "datasource": {
+            "name": "Prometheus"
+          }
+        },
+        {
+          "expr": "oba_realtime_trips_matched_count{server=~\"$server_id\", agency=~\"$agency_id\"}",
+          "refId": "B",
+          "datasource": {
+            "name": "Prometheus"
+          }
+        },
+        {
+          "expr": "oba_realtime_trips_unmatched_count{server=~\"$server_id\", agency=~\"$agency_id\"}",
+          "refId": "C",
+          "datasource": {
+            "name": "Prometheus"
+          }
+        },
+        {
+          "expr": "oba_realtime_trip_match_ratio{server=~\"$server_id\", agency=~\"$agency_id\"}",
+          "refId": "D",
+          "datasource": {
+            "name": "Prometheus"
+          }
+        }
+      ],
+      "title": "4.1 Trip Matching",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "name": "Prometheus"
+      },
+      "description": "Metrics: oba_stops_matched_count, oba_stops_unmatched_count, oba_stop_match_ratio\nQuestion answered: \"Are stop mappings degrading?\"",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 36
+      },
+      "id": 402,
+      "targets": [
+        {
+          "expr": "oba_stops_matched_count{server=~\"$server_id\", agency=~\"$agency_id\"}",
+          "refId": "A",
+          "datasource": {
+            "name": "Prometheus"
+          }
+        },
+        {
+          "expr": "oba_stops_unmatched_count{server=~\"$server_id\", agency=~\"$agency_id\"}",
+          "refId": "B",
+          "datasource": {
+            "name": "Prometheus"
+          }
+        },
+        {
+          "expr": "oba_stop_match_ratio{server=~\"$server_id\", agency=~\"$agency_id\"}",
+          "refId": "C",
+          "datasource": {
+            "name": "Prometheus"
+          }
+        }
+      ],
+      "title": "4.2 Stop Matching",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "name": "Prometheus"
+      },
+      "description": "Metrics: oba_agencies_with_coverage_count, oba_scheduled_trips_count\nQuestion answered: \"What is the overall realtime coverage footprint?\"",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 36
+      },
+      "id": 403,
+      "targets": [
+        {
+          "expr": "oba_agencies_with_coverage_count{server=~\"$server_id\"}",
+          "refId": "A",
+          "datasource": {
+            "name": "Prometheus"
+          }
+        },
+        {
+          "expr": "oba_scheduled_trips_count{server=~\"$server_id\", agency=~\"$agency_id\"}",
+          "refId": "B",
+          "datasource": {
+            "name": "Prometheus"
+          }
+        }
+      ],
+      "title": "4.3 Coverage Summary",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 44
+      },
+      "id": 500,
+      "panels": [],
+      "title": "5. Vehicle Anomalies",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "name": "Prometheus"
+      },
+      "description": "Metrics: gtfs_rt_vehicle_computed_speed, gtfs_rt_vehicle_speed_discrepancy_ratio\nQuestion answered: \"Are vehicles reporting unrealistic speeds?\"",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 45
+      },
+      "id": 501,
+      "targets": [
+        {
+          "expr": "gtfs_rt_vehicle_computed_speed{server_id=~\"$server_id\", agency_id=~\"$agency_id\"}",
+          "refId": "A",
+          "datasource": {
+            "name": "Prometheus"
+          }
+        },
+        {
+          "expr": "gtfs_rt_vehicle_speed_discrepancy_ratio{server_id=~\"$server_id\", agency_id=~\"$agency_id\"}",
+          "refId": "B",
+          "datasource": {
+            "name": "Prometheus"
+          }
+        }
+      ],
+      "title": "5.1 Speed Validation",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "name": "Prometheus"
+      },
+      "description": "Metrics: gtfs_rt_invalid_vehicle_coordinates, gtfs_rt_stopped_out_of_bounds_vehicles\nQuestion answered: \"Are vehicle coordinates geographically valid?\"",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 45
+      },
+      "id": 502,
+      "targets": [
+        {
+          "expr": "gtfs_rt_invalid_vehicle_coordinates{server_id=~\"$server_id\"}",
+          "refId": "A",
+          "datasource": {
+            "name": "Prometheus"
+          }
+        },
+        {
+          "expr": "gtfs_rt_stopped_out_of_bounds_vehicles{server_id=~\"$server_id\"}",
+          "refId": "B",
+          "datasource": {
+            "name": "Prometheus"
+          }
+        }
+      ],
+      "title": "5.2 Spatial Validation",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 53
+      },
+      "id": 600,
+      "panels": [],
+      "title": "6. Deep Diagnostics",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "name": "Prometheus"
+      },
+      "description": "Metrics: oba_unmatched_stop_cluster_count\nQuestion answered: \"Where are failures concentrated?\"",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 54
+      },
+      "id": 601,
+      "targets": [
+        {
+          "expr": "oba_unmatched_stop_cluster_count",
+          "refId": "A",
+          "datasource": {
+            "name": "Prometheus"
+          }
+        }
+      ],
+      "title": "6.1 Unmatched Stop Clusters",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "name": "Prometheus"
+      },
+      "description": "Metrics: oba_unmatched_stop_location\nQuestion answered: \"Which exact stops are failing?\"",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 54
+      },
+      "id": 602,
+      "targets": [
+        {
+          "expr": "oba_unmatched_stop_location",
+          "refId": "A",
+          "datasource": {
+            "name": "Prometheus"
+          }
+        }
+      ],
+      "title": "6.2 Unmatched Stop Locations",
+      "type": "timeseries"
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": [
+    "watchdog",
+    "metrics"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "name": "Prometheus"
+        },
+        "definition": "label_values(server_id)",
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "name": "server_id",
+        "options": [],
+        "query": {
+          "query": "label_values(server_id)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query",
+        "label": "Server"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "name": "Prometheus"
+        },
+        "definition": "label_values(agency_id)",
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "name": "agency_id",
+        "options": [],
+        "query": {
+          "query": "label_values(agency_id)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query",
+        "label": "Agency"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Watchdog Metrics Dashboard",
+  "uid": "watchdog-metrics",
+  "version": 1
+}
